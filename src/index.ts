@@ -11,6 +11,8 @@ export interface Env {
   TWEETS: KVNamespace;
 }
 
+const TWEET_ID_TTL = 60 * 60 * 24 * 7;
+
 type Tweet = NonNullable<TwitterResponse<usersIdTweets>["data"]>[number];
 
 async function getTweets(env: Env, latest?: string): Promise<Tweet[]> {
@@ -18,12 +20,17 @@ async function getTweets(env: Env, latest?: string): Promise<Tweet[]> {
   const tweets = await client.tweets.usersIdTweets(env.USER_ID, {
     exclude: ["replies"],
     since_id: latest,
+    "tweet.fields": ["conversation_id"],
   });
 
   return tweets.data || [];
 }
 
-async function postMastodonStatus(env: Env, status: string): Promise<any> {
+async function postMastodonStatus(env: Env, tweet: Tweet): Promise<any> {
+  const replyId = tweet.conversation_id
+    ? await env.TWEETS.get(`tweet-${tweet.conversation_id}`)
+    : null;
+
   const post: any = await fetch(`https://${env.MASTODON_URL}/api/v1/statuses`, {
     method: "POST",
     headers: {
@@ -31,7 +38,8 @@ async function postMastodonStatus(env: Env, status: string): Promise<any> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      status,
+      status: tweet.text,
+      in_reply_to_id: replyId,
     }),
   }).then((res) => res.json());
 
@@ -56,7 +64,10 @@ export default {
       const tweet = tweets[i];
       console.log(`Posting tweet: ${tweet.id}`, JSON.stringify(tweet));
 
-      const post = await postMastodonStatus(env, tweet.text);
+      const post = await postMastodonStatus(env, tweet);
+      await env.TWEETS.put(`tweet-${tweet.id}`, post.id, {
+        expirationTtl: TWEET_ID_TTL,
+      });
 
       console.log(`Posted to mastodon: ${post.id}`, JSON.stringify(post));
     }

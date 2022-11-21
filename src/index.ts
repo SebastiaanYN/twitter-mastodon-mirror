@@ -15,6 +15,15 @@ const TWEET_ID_TTL = 60 * 60 * 24 * 7;
 
 type Tweet = NonNullable<TwitterResponse<usersIdTweets>["data"]>[number];
 
+function unescapeString(s: string): string {
+  return s
+    .replaceAll("&amp;", "&")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#39;", "'");
+}
+
 async function getTweets(env: Env, latest?: string): Promise<Tweet[]> {
   const client = new Client(new auth.OAuth2Bearer(env.TWITTER_TOKEN));
   const tweets = await client.tweets.usersIdTweets(env.USER_ID, {
@@ -38,7 +47,7 @@ async function postMastodonStatus(env: Env, tweet: Tweet): Promise<any> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      status: tweet.text,
+      status: unescapeString(tweet.text),
       in_reply_to_id: replyId,
     }),
   }).then((res) => res.json());

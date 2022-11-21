@@ -1,0 +1,20 @@
+name = "twitter-mastodon-mirror"
+main = "src/index.ts"
+compatibility_date = "2022-11-21"
+
+node_compat = true
+
+kv_namespaces = [
+    { binding = "TWEETS", id = "c227f1cef172437ea0a776302801ea97", preview_id = "2f63ab16d925447c96ec6c7c0f33421b" }
+]
+
+[triggers]
+crons = ["*/5 * * * *"]
+
+[vars]
+USER_ID = ""
+MASTODON_URL = "mastodon.social"
+
+# secrets:
+# - TWITTER_TOKEN
+# - MASTODON_TOKEN

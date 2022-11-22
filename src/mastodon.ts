@@ -76,6 +76,7 @@ export async function postMastodonStatus(
       status: unescapeString(tweet.text), // tweets keep escape codes
       media_ids: mediaIds,
       in_reply_to_id: replyId,
+      sensitive: tweet.possibly_sensitive,
     }),
   }).then((res) => res.json());
 

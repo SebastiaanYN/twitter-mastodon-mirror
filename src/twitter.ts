@@ -19,7 +19,7 @@ export async function getTweets(
     since_id: latest,
     expansions: ["attachments.media_keys"],
     "media.fields": ["url", "alt_text"],
-    "tweet.fields": ["conversation_id"],
+    "tweet.fields": ["conversation_id", "possibly_sensitive"],
   });
 
   return tweets;

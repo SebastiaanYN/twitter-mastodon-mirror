@@ -66,7 +66,7 @@ export default {
       case "*/5 * * * *":
         await mirrorTweets(env);
         break;
-      case "0 */3 * * *":
+      case "0 */8 * * *":
         await mirrorProfile(env);
         break;
     }

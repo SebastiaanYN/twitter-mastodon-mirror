@@ -9,6 +9,10 @@ import { Env } from ".";
 
 export type User = NonNullable<TwitterResponse<findUserById>["data"]>;
 export type Tweet = NonNullable<TwitterResponse<usersIdTweets>["data"]>[number];
+
+export type Entities = NonNullable<Tweet["entities"]>;
+export type Attachments = NonNullable<Tweet["attachments"]>;
+
 export type Media = NonNullable<
   NonNullable<TwitterResponse<usersIdTweets>["includes"]>["media"]
 >[number] & { url?: string; alt_text?: string };
@@ -27,7 +31,7 @@ export async function getTweets(
     since_id: latest,
     expansions: ["attachments.media_keys"],
     "media.fields": ["url", "alt_text"],
-    "tweet.fields": ["conversation_id", "possibly_sensitive"],
+    "tweet.fields": ["conversation_id", "possibly_sensitive", "entities"],
   });
 
   return tweets;
@@ -45,6 +49,7 @@ export async function getUser(
       "description",
       "profile_image_url",
       "pinned_tweet_id",
+      "entities",
     ],
   });
 

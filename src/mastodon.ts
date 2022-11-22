@@ -1,6 +1,6 @@
 import { Env } from ".";
 import { Media, Tweet, User } from "./twitter";
-import { unescapeString } from "./utils";
+import { expandEntities, unescapeString } from "./utils";
 
 async function uploadMedia(
   env: Env,
@@ -66,6 +66,12 @@ export async function postMastodonStatus(
     media
   );
 
+  let status = tweet.text;
+  if (tweet.entities) {
+    status = expandEntities(status, tweet.entities, tweet.attachments);
+  }
+  status = unescapeString(status); // tweets keep escape codes
+
   const post: any = await fetch(`https://${env.MASTODON_URL}/api/v1/statuses`, {
     method: "POST",
     headers: {
@@ -73,7 +79,7 @@ export async function postMastodonStatus(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      status: unescapeString(tweet.text), // tweets keep escape codes
+      status,
       media_ids: mediaIds,
       in_reply_to_id: replyId,
       sensitive: tweet.possibly_sensitive,
@@ -118,11 +124,14 @@ export async function updateProfile(env: Env, user: User): Promise<any> {
 
   formData.append("bot", "true");
   formData.append("display_name", user.name);
-  formData.append(
-    "note",
-    `mirror of https://twitter.com/${user.username}` +
-      (user.description ? ` - ${user.description}` : "")
-  );
+
+  let description = `mirror of https://twitter.com/${user.username}`;
+  if (user.description && user.entities?.description) {
+    description += " - ";
+    description += expandEntities(user.description, user.entities.description);
+  }
+  description = unescapeString(description);
+  formData.append("note", description);
 
   console.log("Updating profile");
   const res: any = await fetch(

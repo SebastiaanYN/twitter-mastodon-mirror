@@ -126,9 +126,17 @@ export async function updateProfile(env: Env, user: User): Promise<any> {
   formData.append("display_name", user.name);
 
   let description = `mirror of https://twitter.com/${user.username}`;
-  if (user.description && user.entities?.description) {
+  if (user.description) {
     description += " - ";
-    description += expandEntities(user.description, user.entities.description);
+
+    if (user.entities?.description) {
+      description += expandEntities(
+        user.description,
+        user.entities.description
+      );
+    } else {
+      description += user.description;
+    }
   }
   description = unescapeString(description);
   formData.append("note", description);

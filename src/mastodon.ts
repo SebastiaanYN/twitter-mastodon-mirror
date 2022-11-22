@@ -1,5 +1,5 @@
 import { Env } from ".";
-import { Media, Tweet } from "./twitter";
+import { Media, Tweet, User } from "./twitter";
 import { unescapeString } from "./utils";
 
 async function uploadMedia(
@@ -81,4 +81,60 @@ export async function postMastodonStatus(
   }).then((res) => res.json());
 
   return post;
+}
+
+async function pinStatus(env: Env, tweetId: string): Promise<void> {
+  const id = await env.TWEETS.get(`tweet-${tweetId}`);
+
+  if (id) {
+    console.log(`Pinning tweet: ${tweetId}`);
+    await fetch(`https://${env.MASTODON_URL}/api/v1/statuses/${id}/pin`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.MASTODON_TOKEN}`,
+      },
+    });
+    console.log(`Pinned: ${id}`);
+  } else {
+    console.log(`Tweet ${tweetId} is not mirrored`);
+  }
+}
+
+export async function updateProfile(env: Env, user: User): Promise<any> {
+  if (user.pinned_tweet_id) {
+    await pinStatus(env, user.pinned_tweet_id);
+  }
+
+  const formData = new FormData();
+
+  if (user.profile_image_url) {
+    // For some reason Twitter runs a link that's very low quality, so the _normal at the end needs to be removed
+    const profileImageUrl = user.profile_image_url.replace("_normal.", ".");
+    console.log(`Fetching profile image: ${profileImageUrl}`);
+
+    const avatar = await fetch(profileImageUrl).then((res) => res.blob());
+    formData.append("avatar", avatar);
+  }
+
+  formData.append("bot", "true");
+  formData.append("display_name", user.name);
+  formData.append(
+    "note",
+    `mirror of https://twitter.com/${user.username}` +
+      (user.description ? ` - ${user.description}` : "")
+  );
+
+  console.log("Updating profile");
+  const res: any = await fetch(
+    `https://${env.MASTODON_URL}/api/v1/accounts/update_credentials`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${env.MASTODON_TOKEN}`,
+      },
+      body: formData,
+    }
+  ).then((res) => res.text());
+
+  return res;
 }

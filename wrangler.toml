@@ -3,6 +3,7 @@ main = "src/index.ts"
 compatibility_date = "2022-11-21"
 
 node_compat = true
+workers_dev = false
 
 kv_namespaces = [
     { binding = "TWEETS", id = "c227f1cef172437ea0a776302801ea97", preview_id = "2f63ab16d925447c96ec6c7c0f33421b" }
